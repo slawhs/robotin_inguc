@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Schema for looking for an ubication in a university campus.",
+    "type": "object",
+    "properties": {
+        "places": {
+            "description": "Lista de lugares dentro de la Universidad Católica de Chile",
+            "type": "array",
+            "items": {
+                "type" : "object",
+                "properties":{
+                    "name": {
+                        "description": "Nombre del lugar",
+                        "type": "string" 
+                    },
+                    "information": {
+                        "description": "Información de que hay en el luegar. Las personas pueden usarlo como nombre alternativo.",
+                        "type": "string"
+                    },
+                    "categories": {
+                        "description": "Lista con la categoría del lugar. Los principales son salas de clases (classroom), auditorio (auditorium) y baños (bath).",
+                        "type": ["array", "string"]
+                        },
+                    "campus" : {
+                        "description": "Campus de la universidad donde se encuentra el lugar. Hay 4 campus: San Joaquin (SJ), Lo Contador (LC), Oriente (OR), Casa Central (CC).",
+                        "type": "string"
+                    },
+                    "faculties": {
+                        "description": "Facultad que administra el lugar. El parámetro es una abreviación de la facultad.",
+                        "type": ["array", "string"]
+                    },
+                    "floors": {
+                        "description": "Piso del edificio donde se encuentra el lugar",
+                        "type": ["array", "number"]
+                    },
+                    "coordinates": {
+                        "description": "Coordenadas geográficas del lugar",
+                        "type": "array",
+                        "items": {
+                            "type" : "number"
+                        }
+                    }
+                }
+            },
+            "required": ["name"]
+        }
+    }
+}
