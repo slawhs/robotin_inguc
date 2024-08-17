@@ -6,6 +6,7 @@ from llama_index.core import (VectorStoreIndex, SimpleDirectoryReader,
 from llama_index.core.agent import ReActAgent
 from llama_index.core.embeddings import resolve_embed_model
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_parse import LlamaParse
 from prompts import context
 import os
@@ -16,7 +17,8 @@ load_dotenv()
 
 PERSIST_DIR = "./storage/"
 
-llm = Ollama(model='llama3.1', request_timeout=60.0)
+llm = Ollama(model='gemma2', request_timeout=60.0)
+# llm2 = Ollama(model='gemma2', request_timeout=60.0)
 embed_model = resolve_embed_model('local:jinaai/jina-embeddings-v2-base-es')
 
 parser = LlamaParse(result_type='markdown')
@@ -72,13 +74,28 @@ query_engine_tools = [
     ),
 ]
 
-agent = ReActAgent.from_tools(query_engine_tools,
+query_engine = SubQuestionQueryEngine.from_defaults(
+    query_engine_tools=query_engine_tools,
+    llm=llm
+)
+
+query_engine_sub_tool = QueryEngineTool(
+    query_engine=query_engine,
+    metadata=ToolMetadata(
+        name="sub_question_query_engine",
+        description="Useful for when you want to answer more than ome question, or a compound question."
+    )
+)
+
+agent = ReActAgent.from_tools(query_engine_tools + [query_engine_sub_tool],
                               llm=llm,
                               verbose=False,
                               context=context,
                               max_iterations=20,
                               )
-
+file = open("out.json", 'w')
+print(agent.get_prompts(), file=file)
+file.close()
 while True:
     text_input = input(">> ")
     if text_input == "q":
