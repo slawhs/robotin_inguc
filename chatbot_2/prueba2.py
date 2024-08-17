@@ -1,40 +1,88 @@
 # Code based on: https://www.youtube.com/watch?v=JLmI0GJuGlY
 
 from llama_index.llms.ollama import Ollama
-from llama_parse import LlamaParse
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, PromptTemplate
+from llama_index.core import (VectorStoreIndex, SimpleDirectoryReader,
+                              StorageContext, load_index_from_storage)
+from llama_index.core.agent import ReActAgent
 from llama_index.core.embeddings import resolve_embed_model
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
-from llama_index.core.agent import ReActAgent
+from llama_parse import LlamaParse
 from prompts import context
+import os
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-llm = Ollama(model='llama3', request_timeout=30.0)
+PERSIST_DIR = "./storage/"
+
+llm = Ollama(model='llama3.1', request_timeout=60.0)
+embed_model = resolve_embed_model('local:jinaai/jina-embeddings-v2-base-es')
 
 parser = LlamaParse(result_type='markdown')
-file_extractor={'.pdf': parser}
-documents = SimpleDirectoryReader('./data', file_extractor=file_extractor).load_data()
+file_extractor = {'.pdf': parser}
 
-embed_model =  resolve_embed_model('local:jinaai/jina-embeddings-v2-base-es')
-vector_index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
+data_list = ["practica", "data"]
 
-chat_engine = vector_index.as_chat_engine(llm=llm, chat_mode='condense_plus_context', context=context)
+data_docs = {}
 
-while (prompt := input("Enter a prompt (q to quit):")) != "q":
-    retries = 0
+data_indexes = {}
 
-    while retries < 3:
-        try:
-            result = chat_engine.chat(prompt)
-            print(result)
-            break
-        except Exception as e:
-            retries += 1
-            print("Error ocurred, retrying...")
-        
-    if retries >= 3:
-        print("Unable to process request. Please try again.")
-        continue
+for name in data_list:
+    if not os.listdir(PERSIST_DIR + name):
+        # print("No existe :(")
+        data_docs[name] = SimpleDirectoryReader(
+            input_files=[f"./data/{name}.pdf"],
+            file_extractor=file_extractor
+        ).load_data()
+        storage_context = StorageContext.from_defaults()
+        data_indexes[name] = VectorStoreIndex.from_documents(
+            data_docs[name], embed_model=embed_model,
+            storage_context=storage_context
+        )
 
+        storage_context.persist(persist_dir=PERSIST_DIR+name)
+    else:
+        # print("Existe :)")
+        storage_context = StorageContext.from_defaults(
+            persist_dir=PERSIST_DIR+name,
+        )
+        data_indexes[name] = load_index_from_storage(
+            storage_context,
+            embed_model=embed_model
+        )
+
+practica_engine = data_indexes["practica"].as_query_engine(
+    similarity_top_k=3, llm=llm)
+
+data_engine = data_indexes["data"].as_query_engine(similarity_top_k=3, llm=llm)
+
+query_engine_tools = [
+    QueryEngineTool(
+        query_engine=practica_engine,
+        metadata=ToolMetadata(
+            name="practica_1_manual",
+            description="Entrega información sobre el manual de instrucciones y especificaciones de la práctica 1")
+    ),
+    QueryEngineTool(
+        query_engine=data_engine,
+        metadata=ToolMetadata(
+            name="eventos",
+            description="Entrega información sobre fechas y precios de distintos eventos y evaluaciones")
+    ),
+]
+
+agent = ReActAgent.from_tools(query_engine_tools,
+                              llm=llm,
+                              verbose=False,
+                              context=context,
+                              max_iterations=20,
+                              )
+
+while True:
+    text_input = input(">> ")
+    if text_input == "q":
+        break
+    streaming_response = agent.stream_chat(text_input)
+    streaming_response.print_response_stream()
+    print()
