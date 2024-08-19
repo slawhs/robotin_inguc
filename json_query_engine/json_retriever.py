@@ -13,12 +13,18 @@ with open(path.join('data', 'places.json')) as f:
 with open(path.join('data', 'places_schema.json')) as f:
     json_schema = json.load(f)
 
-llm = Ollama(model='llama3', request_timeout=60.0)
+llm = Ollama(model='llama3', request_timeout=300.0)
 
+def custom_query_processor(query):
+    # Añadir "properties" antes de cualquier clave
+    return query.replace("$.places[", "$.places[?(@.properties.")
+
+# Crear instancia de JSONQueryEngine con la función personalizada
 nl_query_engine = JSONQueryEngine(
     json_value=json_dict,
     json_schema=json_schema,
-    llm=llm
+    llm=llm,
+    query_processor=custom_query_processor  # Asignar la función personalizada
 )
 
 

@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "description": "Schema for looking for an ubication in a university campus.",
+    "description": "Schema for looking the coordinates of a place in a university.",
     "type": "object",
     "properties": {
         "places": {
@@ -10,7 +10,7 @@
                 "type" : "object",
                 "properties":{
                     "name": {
-                        "description": "Nombre del lugar",
+                        "description": "Nombre del lugar para el cual encontrar las coordenadas",
                         "type": "string" 
                     },
                     "information": {
