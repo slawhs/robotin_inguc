@@ -1,3 +1,5 @@
 */.env
 __pycache__/
 storage/
+chatbot_2/.env
+chatbot_1/.env
