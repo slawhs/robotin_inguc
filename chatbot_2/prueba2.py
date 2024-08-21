@@ -5,14 +5,15 @@ from llama_index.core import (VectorStoreIndex, SimpleDirectoryReader,
                               StorageContext, load_index_from_storage)
 from llama_index.core.agent import ReActAgent
 from llama_index.core.embeddings import resolve_embed_model
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
 from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_parse import LlamaParse
 from prompts import context
+from function_tools import place_query
+import json
 import os
 
 from dotenv import load_dotenv
-
 load_dotenv()
 
 PERSIST_DIR = "./storage/"
@@ -34,7 +35,7 @@ for name in data_list:
     if not os.listdir(PERSIST_DIR + name):
         # print("No existe :(")
         data_docs[name] = SimpleDirectoryReader(
-            input_files=[f"./data/{name}.pdf"],
+            input_files=[os.path.join("data", f"{name}.pdf")],
             file_extractor=file_extractor
         ).load_data()
         storage_context = StorageContext.from_defaults()
@@ -71,8 +72,14 @@ query_engine_tools = [
         metadata=ToolMetadata(
             name="eventos",
             description="Entrega información sobre fechas y precios de distintos eventos y evaluaciones")
-    ),
+    )
 ]
+
+place_tool = FunctionTool.from_defaults(
+    fn=place_query,
+    name="place_query",
+    description="Consulta las coordenadas (ubicación) de un lugar de la universidad."
+)
 
 query_engine = SubQuestionQueryEngine.from_defaults(
     query_engine_tools=query_engine_tools,
@@ -87,7 +94,7 @@ query_engine_sub_tool = QueryEngineTool(
     )
 )
 
-agent = ReActAgent.from_tools(query_engine_tools + [query_engine_sub_tool],
+agent = ReActAgent.from_tools(query_engine_tools + [query_engine_sub_tool, place_tool],
                               llm=llm,
                               verbose=False,
                               context=context,
