@@ -10,7 +10,6 @@ from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_parse import LlamaParse
 from prompts import context
 from function_tools import place_query
-import json
 import os
 
 from dotenv import load_dotenv

@@ -2,7 +2,7 @@ from jsonpath_ng.ext import parse
 import json
 import os
 
-def place_query(place_name: str, places_json: dict) -> list:
+def place_query(place_name: str) -> list:
     """Retorna una lista con la ubicación (coordenadas) de un lugar de la universidad a partir su nombre. Si la lista no es vacía, entonces es una ubicación válida."""
 
     with open(os.path.join('data', 'places.json')) as f:
