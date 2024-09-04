@@ -42,7 +42,6 @@ for name in data_list:
             data_docs[name], embed_model=embed_model,
             storage_context=storage_context
         )
-
         storage_context.persist(persist_dir=PERSIST_DIR+name)
     else:
         # print("Existe :)")

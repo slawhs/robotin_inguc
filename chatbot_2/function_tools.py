@@ -20,18 +20,22 @@ def place_query(place_name: str) -> list:
         place_code = place_code.strip("Auditorio ")
         place_code = place_code.strip("AUDITORIO ")
 
+    print(f"place_code: {place_code}")
+
     try:
         # Definir la expresión JSONPath
-        jsonpath_expr = parse(f"$.places[?(@.name =~ '{place_code}')].coordinates")
+        jsonpath_expr = parse(f"$.places[?(@.name =~ '{place_code.upper()}')].coordinates")
         # Ejecutar la consulta JSONPath
         result = jsonpath_expr.find(json_data)
         # Mostrar los resultados
-        coordinates = [match.value for match in result][0]
+        coordinates = [match.value for match in result]
+
+        print(f"coordinates: {coordinates}")
 
         if coordinates == []:
             return("Error, no se encontró un lugar.")
         
-        return(coordinates[::-1])
+        return(coordinates[0][::-1])
 
 
     except ValueError as e:
